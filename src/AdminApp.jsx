@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Store, Users, Tag, ImagePlus, Copy, Check, ChevronLeft, Lock, LogOut, X, Camera, Eye } from "lucide-react";
+import { Store, Users, Tag, ImagePlus, Copy, Check, ChevronLeft, Lock, LogOut, X, Camera, Eye, MessageCircle } from "lucide-react";
 import {
   THEMES,
   SWATCHES,
-  ADMIN_CREDENTIALS,
+  ADMIN_ACCESS_ID,
   loadProductsCached,
   refreshProducts,
   saveProducts,
@@ -14,21 +14,21 @@ import {
   money,
   cartTotal,
   buildWhatsappMessage,
+  whatsappLink,
   fileToResizedDataUrl,
 } from "./lib.js";
 
 function LoginScreen({ onLogin }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [accessId, setAccessId] = useState("");
   const [error, setError] = useState("");
 
   function submit(e) {
     e.preventDefault();
-    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+    if (accessId.trim() === ADMIN_ACCESS_ID) {
       setAdminLoggedIn(true);
       onLogin();
     } else {
-      setError("Incorrect username or password.");
+      setError("Incorrect ID.");
     }
   }
 
@@ -42,16 +42,21 @@ function LoginScreen({ onLogin }) {
         <p style={{ fontSize: "12px", color: "#D9C3D6", margin: "4px 0 0" }}>Your dashboard, sign in to continue</p>
       </div>
       <form onSubmit={submit} style={{ padding: "26px 22px" }}>
-        <label style={{ fontSize: "11.5px", color: "#6B5B73", fontWeight: 500 }}>Username</label>
-        <input value={username} onChange={(e) => setUsername(e.target.value)} style={{ width: "100%", border: "1px solid #E8CFE0", borderRadius: "9px", padding: "10px 12px", fontSize: "13px", margin: "5px 0 14px", background: "#fff", color: "#241934" }} />
-        <label style={{ fontSize: "11.5px", color: "#6B5B73", fontWeight: 500 }}>Password</label>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: "100%", border: "1px solid #E8CFE0", borderRadius: "9px", padding: "10px 12px", fontSize: "13px", margin: "5px 0 6px", background: "#fff", color: "#241934" }} />
+        <label style={{ fontSize: "11.5px", color: "#6B5B73", fontWeight: 500 }}>ID</label>
+        <input
+          value={accessId}
+          onChange={(e) => setAccessId(e.target.value)}
+          autoFocus
+          autoComplete="off"
+          placeholder="Enter your ID"
+          style={{ width: "100%", border: "1px solid #E8CFE0", borderRadius: "9px", padding: "10px 12px", fontSize: "13px", margin: "5px 0 6px", background: "#fff", color: "#241934" }}
+        />
         {error && <p style={{ fontSize: "11px", color: "#A3403B", margin: "4px 0 10px" }}>{error}</p>}
         <button type="submit" style={{ width: "100%", background: "#3B1F5E", color: "#FBF3F8", border: "none", borderRadius: "10px", padding: "12px", fontSize: "13.5px", cursor: "pointer", fontWeight: 500, marginTop: "10px" }}>
           Sign in
         </button>
         <p style={{ fontSize: "10.5px", color: "#B3A0BB", textAlign: "center", marginTop: "14px", lineHeight: 1.5 }}>
-          Demo login &mdash; username <b>alfa</b>, password <b>alfa2026</b>
+          Demo login &mdash; ID <b>alfa2026</b>
         </p>
       </form>
     </div>
@@ -208,7 +213,14 @@ export default function AdminApp() {
           {openCart.customer && (
             <div style={{ background: "#fff", border: "1px solid #F0DCE6", borderRadius: "10px", padding: "12px 14px", marginBottom: "14px" }}>
               <p style={{ margin: "0 0 4px", fontSize: "12.5px", fontWeight: 500, color: "#241934" }}>{openCart.customer.name}</p>
-              <p style={{ margin: "0 0 4px", fontSize: "11.5px", color: "#A99BB0" }}>{openCart.customer.phone}</p>
+              <a
+                href={whatsappLink(openCart.customer.phone)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "inline-flex", alignItems: "center", gap: "5px", margin: "0 0 4px", fontSize: "11.5px", color: "#1F7A4D", textDecoration: "none", fontWeight: 500 }}
+              >
+                <MessageCircle size={12} /> {openCart.customer.phone}
+              </a>
               <p style={{ margin: 0, fontSize: "11.5px", color: "#A99BB0" }}>{openCart.customer.address}</p>
             </div>
           )}
@@ -230,6 +242,14 @@ export default function AdminApp() {
               <div style={{ background: "#fff", border: "1px solid #F0DCE6", borderRadius: "10px", padding: "12px", fontSize: "11.5px", color: "#241934", whiteSpace: "pre-wrap", lineHeight: 1.5, marginBottom: "10px" }}>
                 {buildWhatsappMessage(openCart)}
               </div>
+              <a
+                href={whatsappLink(openCart.customer.phone, buildWhatsappMessage(openCart))}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ width: "100%", boxSizing: "border-box", background: "#25D366", color: "#062E17", border: "none", borderRadius: "10px", padding: "11px", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", textDecoration: "none", marginBottom: "8px" }}
+              >
+                <MessageCircle size={14} /> Send on WhatsApp
+              </a>
               <button onClick={() => copyMessage(openCartId, openCart)} style={{ width: "100%", background: copiedId === openCartId ? "#F3D9E4" : "#3B1F5E", color: copiedId === openCartId ? "#3B1F5E" : "#FBF3F8", border: "none", borderRadius: "10px", padding: "11px", fontSize: "13px", cursor: "pointer", fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                 {copiedId === openCartId ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy message</>}
               </button>

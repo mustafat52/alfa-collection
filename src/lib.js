@@ -23,9 +23,9 @@ export const INITIAL_PRODUCTS = [
 ];
 
 // Demo login only. Real deployment must move this behind a real backend
-// with hashed passwords and a proper session/token, never a hardcoded
+// with a hashed secret and a proper session/token, never a hardcoded
 // client-side check like this one.
-export const ADMIN_CREDENTIALS = { username: "alfa", password: "alfa2026" };
+export const ADMIN_ACCESS_ID = "alfa2026";
 
 const PRODUCTS_KEY = "ac_demo_products";
 const CARTS_KEY = "ac_demo_carts";
@@ -180,6 +180,26 @@ export function makeCartId(existingIds) {
 
 export function cartTotal(cart) {
   return cart.items.reduce((sum, i) => sum + (i.sale ? i.salePrice : i.price) * i.qty, 0);
+}
+
+// Turns whatever the customer typed ("+91 98765 43210", "098765-43210")
+// into the digits-only international form wa.me expects. Indian numbers are
+// assumed when a bare 10-digit number comes in, since that's the store's base.
+export function normalizePhone(raw, defaultCountryCode = "91") {
+  let digits = String(raw || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.length === 10) return defaultCountryCode + digits;
+  if (digits.length === 11 && digits.startsWith("0")) return defaultCountryCode + digits.slice(1);
+  return digits;
+}
+
+// wa.me link. Pass a message to have WhatsApp pre-fill the chat box.
+export function whatsappLink(raw, message) {
+  const phone = normalizePhone(raw);
+  if (!phone) return "";
+  const base = `https://wa.me/${phone}`;
+  return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 }
 
 export function buildWhatsappMessage(cart) {
