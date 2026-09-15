@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Store, Users, Tag, ImagePlus, Copy, Check, ChevronLeft, Lock, LogOut, X, Camera } from "lucide-react";
+import { Store, Users, Tag, ImagePlus, Copy, Check, ChevronLeft, Lock, LogOut, X, Camera, Eye } from "lucide-react";
 import {
   THEMES,
   SWATCHES,
@@ -31,8 +31,8 @@ function LoginScreen({ onLogin }) {
   }
 
   return (
-    <div style={{ width: "100%", maxWidth: "380px", margin: "0 auto", background: "#FDF4F8", borderRadius: "22px", overflow: "hidden", fontFamily: "'Jost', sans-serif", boxShadow: "0 0 0 1px #F0DCE6", minHeight: "500px" }}>
-      <div style={{ background: "#241934", padding: "36px 24px 28px", textAlign: "center" }}>
+    <div className="alfa-shell" style={{ maxWidth: "380px", minHeight: "500px" }}>
+      <div style={{ background: "#241934", padding: "36px 24px 28px", textAlign: "center", paddingTop: "calc(36px + env(safe-area-inset-top))" }}>
         <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: "#3f2a5c", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
           <Lock size={18} color="#FBF3F8" />
         </div>
@@ -160,15 +160,24 @@ export default function AdminApp() {
   const openCart = openCartId ? carts[openCartId] : null;
 
   return (
-    <div style={{ width: "100%", maxWidth: "420px", margin: "0 auto", background: "#FDF4F8", borderRadius: "22px", overflow: "hidden", fontFamily: "'Jost', sans-serif", boxShadow: "0 0 0 1px #F0DCE6", minHeight: "640px" }}>
-      <div style={{ background: "#241934", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+    <div className="alfa-shell">
+      <div style={{ background: "#241934", padding: "20px", paddingTop: "calc(20px + env(safe-area-inset-top))", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "21px", fontWeight: 600, color: "#FBF3F8", margin: 0 }}>Your dashboard</p>
           <p style={{ fontSize: "11px", color: "#D9C3D6", margin: "2px 0 0" }}>{submittedList.length} cart{submittedList.length === 1 ? "" : "s"} sent so far</p>
         </div>
-        <button onClick={logout} style={{ background: "none", border: "none", color: "#D9C3D6", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontSize: "11px" }}>
-          <LogOut size={13} /> Sign out
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+          <button
+            onClick={() => window.open("/", "_blank", "noopener")}
+            title="See what customers see"
+            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.28)", color: "#EADCE7", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", padding: "6px 10px", borderRadius: "999px", whiteSpace: "nowrap" }}
+          >
+            <Eye size={13} /> Browse store
+          </button>
+          <button onClick={logout} style={{ background: "none", border: "none", color: "#D9C3D6", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", whiteSpace: "nowrap" }}>
+            <LogOut size={13} /> Sign out
+          </button>
+        </div>
       </div>
 
       {openCart ? (
@@ -291,7 +300,7 @@ export default function AdminApp() {
             </div>
           )}
 
-          <div style={{ maxHeight: "360px", overflowY: "auto" }}>
+          <div className="alfa-scroll">
             {products.map((p) => (
               <div key={p.id} style={{ background: "#fff", border: "1px solid #F0DCE6", borderRadius: "10px", padding: "8px 10px", marginBottom: "7px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
@@ -304,7 +313,7 @@ export default function AdminApp() {
                     <p style={{ margin: 0, fontSize: "11.5px", fontWeight: 500, color: "#241934", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</p>
                     <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "3px" }}>
                       <span style={{ fontSize: "10.5px", color: "#A99BB0" }}>{"\u20b9"}</span>
-                      <input value={p.price} onChange={(e) => editPrice(p.id, e.target.value)} style={{ width: "50px", fontSize: "10.5px", border: "1px solid #E8CFE0", borderRadius: "5px", padding: "2px 5px", color: "#241934" }} />
+                      <input value={p.price} onChange={(e) => editPrice(p.id, e.target.value)} style={{ width: "64px", border: "1px solid #E8CFE0", borderRadius: "5px", padding: "3px 6px", color: "#241934" }} />
                     </div>
                   </div>
                   <button onClick={() => setPhotoEditId(photoEditId === p.id ? null : p.id)} style={{ background: photoEditId === p.id ? "#3B1F5E" : "#F3D9E4", border: "none", borderRadius: "7px", padding: "6px 7px", cursor: "pointer", display: "flex", alignItems: "center" }}>

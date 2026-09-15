@@ -19,7 +19,7 @@ function Toast({ text }) {
 }
 
 // A tiled, low-opacity brand watermark over product imagery. This is a
-// deterrent and a traceability mark, not a screenshot blocker \u2014 no website
+// deterrent and a traceability mark, not a screenshot blocker — no website
 // can prevent a screenshot or screen recording, on iOS or Android.
 function Watermark() {
   return (
@@ -157,23 +157,10 @@ export default function CustomerApp() {
 
   const cartCount = items.reduce((s, i) => s + i.qty, 0);
 
-  const shell = {
-    width: "100%",
-    maxWidth: "420px",
-    margin: "0 auto",
-    background: "#FDF4F8",
-    borderRadius: "22px",
-    overflow: "hidden",
-    position: "relative",
-    minHeight: "640px",
-    fontFamily: "'Jost', sans-serif",
-    boxShadow: "0 0 0 1px #F0DCE6",
-  };
-
   if (screen === "landing") {
     return (
-      <div style={shell}>
-        <div style={{ background: "#3B1F5E", padding: "36px 24px 28px", textAlign: "center" }}>
+      <div className="alfa-shell">
+        <div style={{ background: "#3B1F5E", padding: "36px 24px 28px", textAlign: "center", paddingTop: "calc(36px + env(safe-area-inset-top))" }}>
           <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "26px", color: "#FBF3F8", margin: 0, fontWeight: 600 }}>Alfa Collection</p>
           <p style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontWeight: 500, fontSize: "13.5px", color: "#E3C9DE", margin: "4px 0 0" }}>Your first choice in modest fashion</p>
         </div>
@@ -204,8 +191,8 @@ export default function CustomerApp() {
 
   if (screen === "done") {
     return (
-      <div style={shell}>
-        <div style={{ padding: "60px 26px", textAlign: "center" }}>
+      <div className="alfa-shell">
+        <div style={{ padding: "60px 26px", textAlign: "center", paddingTop: "calc(60px + env(safe-area-inset-top))" }}>
           <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#F3D9E4", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
             <Check size={22} color="#3B1F5E" />
           </div>
@@ -222,9 +209,9 @@ export default function CustomerApp() {
   }
 
   return (
-    <div style={shell}>
+    <div className="alfa-shell">
       {toast && <Toast text={toast} />}
-      <div style={{ background: "#3B1F5E", padding: "18px 20px", color: "#FBF3F8" }}>
+      <div style={{ background: "#3B1F5E", padding: "18px 20px", paddingTop: "calc(18px + env(safe-area-inset-top))", color: "#FBF3F8" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "20px", fontWeight: 600, margin: 0 }}>Alfa Collection</p>
@@ -270,7 +257,8 @@ export default function CustomerApp() {
           </div>
           <div
             ref={protectedAreaRef}
-            style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", maxHeight: "420px", overflowY: "auto", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
+            className="alfa-catalog-grid"
+            style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
           >
             {filtered.map((p) => (
               <div key={p.id} style={{ background: "#fff", borderRadius: "12px", overflow: "hidden", border: "1px solid #F0DCE6" }}>
@@ -322,9 +310,9 @@ export default function CustomerApp() {
                     <p style={{ margin: 0, fontSize: "12.5px", fontWeight: 500, color: "#241934" }}>{i.name}</p>
                     <p style={{ margin: "2px 0 6px", fontSize: "11.5px", color: "#3B1F5E", fontWeight: 500 }}>{money(i.sale ? i.salePrice : i.price)}</p>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <button onClick={() => changeQty(i.id, -1)} style={{ border: "1px solid #E8CFE0", background: "#fff", borderRadius: "6px", width: "22px", height: "22px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Minus size={11} /></button>
-                      <span style={{ fontSize: "12px" }}>{i.qty}</span>
-                      <button onClick={() => changeQty(i.id, 1)} style={{ border: "1px solid #E8CFE0", background: "#fff", borderRadius: "6px", width: "22px", height: "22px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={11} /></button>
+                      <button onClick={() => changeQty(i.id, -1)} style={{ border: "1px solid #E8CFE0", background: "#fff", borderRadius: "8px", width: "30px", height: "30px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Minus size={12} /></button>
+                      <span style={{ fontSize: "12.5px", minWidth: "14px", textAlign: "center" }}>{i.qty}</span>
+                      <button onClick={() => changeQty(i.id, 1)} style={{ border: "1px solid #E8CFE0", background: "#fff", borderRadius: "8px", width: "30px", height: "30px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Plus size={12} /></button>
                     </div>
                   </div>
                 </div>
@@ -370,3 +358,4 @@ export default function CustomerApp() {
     </div>
   );
 }
+
