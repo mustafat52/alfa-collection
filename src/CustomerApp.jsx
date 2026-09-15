@@ -2,9 +2,11 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { ShoppingBag, Plus, Minus, Search, Check, ChevronLeft, CheckCircle2 } from "lucide-react";
 import {
   THEMES,
-  loadProducts,
-  loadCarts,
-  saveCarts,
+  loadProductsCached,
+  refreshProducts,
+  loadCartsCached,
+  refreshCarts,
+  saveCart,
   money,
   makeCartId,
   cartTotal,
@@ -19,7 +21,7 @@ function Toast({ text }) {
 }
 
 // A tiled, low-opacity brand watermark over product imagery. This is a
-// deterrent and a traceability mark, not a screenshot blocker — no website
+// deterrent and a traceability mark, not a screenshot blocker \u2014 no website
 // can prevent a screenshot or screen recording, on iOS or Android.
 function Watermark() {
   return (
@@ -47,13 +49,14 @@ function Watermark() {
 }
 
 export default function CustomerApp() {
-  const [products] = useState(() => loadProducts());
-  const [carts, setCartsState] = useState(() => loadCarts());
+  const [products, setProducts] = useState(() => loadProductsCached());
+  const [carts, setCartsState] = useState(() => loadCartsCached());
   const [screen, setScreen] = useState("landing");
   const [activeId, setActiveId] = useState(null); // only set once a cart has actually been sent
   const [items, setItems] = useState([]); // local, unsaved cart while browsing
   const [lookupId, setLookupId] = useState("");
   const [lookupError, setLookupError] = useState("");
+  const [checkingLookup, setCheckingLookup] = useState(false);
   const [theme, setTheme] = useState("All");
   const [query, setQuery] = useState("");
   const [maxPrice, setMaxPrice] = useState(10000);
@@ -62,6 +65,14 @@ export default function CustomerApp() {
   const [formErrors, setFormErrors] = useState({});
   const toastTimer = useRef(null);
   const protectedAreaRef = useRef(null);
+
+  // Pull the shared, cross-device catalog as soon as the store opens, so
+  // whatever the admin last saved (from any device) shows up here too.
+  useEffect(() => {
+    refreshProducts().then((fresh) => {
+      if (fresh) setProducts(fresh);
+    });
+  }, []);
 
   // Deterrents against casual screenshotting/saving: disable right-click,
   // long-press save, and text/image selection on the catalog area. This
@@ -74,14 +85,6 @@ export default function CustomerApp() {
     node.addEventListener("contextmenu", blockContextMenu);
     return () => node.removeEventListener("contextmenu", blockContextMenu);
   }, [screen]);
-
-  function persistCarts(updater) {
-    setCartsState((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      saveCarts(next);
-      return next;
-    });
-  }
 
   function showToast(text) {
     setToast(text);
@@ -96,19 +99,26 @@ export default function CustomerApp() {
     setScreen("catalog");
   }
 
-  function loadCart() {
+  async function loadCart() {
     const id = lookupId.trim().toUpperCase();
     if (!id) {
       setLookupError("Enter a cart ID first.");
       return;
     }
-    if (!carts[id]) {
+    setCheckingLookup(true);
+    // Check the shared server copy, not just this device's local cache —
+    // the cart may have been created on a different device.
+    const fresh = await refreshCarts();
+    const source = fresh || carts;
+    if (fresh) setCartsState(fresh);
+    setCheckingLookup(false);
+    if (!source[id]) {
       setLookupError("We couldn't find that cart ID. Check it and try again.");
       return;
     }
     setActiveId(id);
-    setItems(carts[id].items);
-    setForm(carts[id].customer || { name: "", address: "", phone: "" });
+    setItems(source[id].items);
+    setForm(source[id].customer || { name: "", address: "", phone: "" });
     setLookupError("");
     setScreen("catalog");
   }
@@ -140,10 +150,9 @@ export default function CustomerApp() {
     // Cart ID is only minted here, at the moment of actually sending —
     // browsing alone never creates one.
     const id = activeId || makeCartId(Object.keys(carts));
-    persistCarts((c) => ({
-      ...c,
-      [id]: { items, customer: form, createdAt: c[id]?.createdAt || Date.now(), submittedAt: Date.now() },
-    }));
+    const cart = { items, customer: form, createdAt: carts[id]?.createdAt || Date.now(), submittedAt: Date.now() };
+    setCartsState((c) => ({ ...c, [id]: cart }));
+    saveCart(id, cart); // fire-and-forget: this is what the admin panel picks up on any device
     setActiveId(id);
     setScreen("done");
   }
@@ -179,8 +188,8 @@ export default function CustomerApp() {
               placeholder="e.g. AC-4821"
               style={{ flex: 1, border: "1px solid #E8CFE0", borderRadius: "10px", padding: "10px 12px", fontSize: "13px", background: "#fff", color: "#241934" }}
             />
-            <button onClick={loadCart} style={{ background: "#F3D9E4", color: "#3B1F5E", border: "none", borderRadius: "10px", padding: "0 16px", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
-              Open
+            <button onClick={loadCart} disabled={checkingLookup} style={{ background: "#F3D9E4", color: "#3B1F5E", border: "none", borderRadius: "10px", padding: "0 16px", fontSize: "13px", fontWeight: 500, cursor: checkingLookup ? "default" : "pointer" }}>
+              {checkingLookup ? "Checking..." : "Open"}
             </button>
           </div>
           {lookupError && <p style={{ fontSize: "11.5px", color: "#A3403B", margin: "8px 0 0" }}>{lookupError}</p>}
@@ -358,4 +367,3 @@ export default function CustomerApp() {
     </div>
   );
 }
-

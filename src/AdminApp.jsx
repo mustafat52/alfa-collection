@@ -1,12 +1,14 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Store, Users, Tag, ImagePlus, Copy, Check, ChevronLeft, Lock, LogOut, X, Camera, Eye } from "lucide-react";
 import {
   THEMES,
   SWATCHES,
   ADMIN_CREDENTIALS,
-  loadProducts,
+  loadProductsCached,
+  refreshProducts,
   saveProducts,
-  loadCarts,
+  loadCartsCached,
+  refreshCarts,
   isAdminLoggedIn,
   setAdminLoggedIn,
   money,
@@ -58,8 +60,9 @@ function LoginScreen({ onLogin }) {
 
 export default function AdminApp() {
   const [loggedIn, setLoggedIn] = useState(isAdminLoggedIn());
-  const [products, setProductsState] = useState(() => loadProducts());
-  const [carts, setCartsState] = useState(() => loadCarts());
+  const [products, setProductsState] = useState(() => loadProductsCached());
+  const [carts, setCartsState] = useState(() => loadCartsCached());
+  const [syncing, setSyncing] = useState(false);
   const [openCartId, setOpenCartId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: "", theme: "Floral", price: "", pattern: SWATCHES[0], images: [] });
@@ -73,14 +76,28 @@ export default function AdminApp() {
   function setProducts(updater) {
     setProductsState((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
-      saveProducts(next);
+      saveProducts(next); // fire-and-forget: syncs to every device
       return next;
     });
   }
 
-  function refreshCarts() {
-    setCartsState(loadCarts());
+  async function refreshCartsFromServer() {
+    setSyncing(true);
+    const fresh = await refreshCarts();
+    if (fresh) setCartsState(fresh);
+    setSyncing(false);
   }
+
+  // Pull the shared, cross-device data as soon as the dashboard opens —
+  // this is what makes a cart submitted on the customer's phone show up
+  // here even if this admin session is on a different device.
+  useEffect(() => {
+    if (!loggedIn) return;
+    refreshCartsFromServer();
+    refreshProducts().then((fresh) => {
+      if (fresh) setProductsState(fresh);
+    });
+  }, [loggedIn]);
 
   if (!loggedIn) {
     return <LoginScreen onLogin={() => setLoggedIn(true)} />;
@@ -225,7 +242,7 @@ export default function AdminApp() {
             <p style={{ fontSize: "12px", fontWeight: 600, color: "#3B1F5E", display: "flex", alignItems: "center", gap: "6px", margin: 0 }}>
               <Users size={13} /> All carts
             </p>
-            <button onClick={refreshCarts} style={{ fontSize: "10.5px", color: "#A99BB0", background: "none", border: "none", cursor: "pointer" }}>Refresh</button>
+            <button onClick={refreshCartsFromServer} disabled={syncing} style={{ fontSize: "10.5px", color: "#A99BB0", background: "none", border: "none", cursor: syncing ? "default" : "pointer" }}>{syncing ? "Refreshing..." : "Refresh"}</button>
           </div>
           {cartList.length === 0 && <p style={{ fontSize: "12px", color: "#A99BB0" }}>No carts sent yet.</p>}
           {cartList.map(([id, c]) => (

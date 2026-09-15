@@ -31,7 +31,18 @@ const PRODUCTS_KEY = "ac_demo_products";
 const CARTS_KEY = "ac_demo_carts";
 const ADMIN_SESSION_KEY = "ac_demo_admin_session";
 
-export function loadProducts() {
+// ---------------------------------------------------------------------
+// Products and carts are shared across every device via /api/products
+// and /api/carts (backed by Vercel KV — see api/carts.js for one-time
+// setup). Each "load" below returns a synchronous *cached* value from
+// this browser's localStorage first, so the UI can render instantly,
+// then a "refresh" function goes to the server for the real, shared
+// data. If the API isn't reachable (e.g. KV hasn't been connected yet,
+// or you're developing locally), everything quietly falls back to
+// local-only storage instead of breaking.
+// ---------------------------------------------------------------------
+
+export function loadProductsCached() {
   try {
     const raw = localStorage.getItem(PRODUCTS_KEY);
     return raw ? JSON.parse(raw) : INITIAL_PRODUCTS;
@@ -40,13 +51,40 @@ export function loadProducts() {
   }
 }
 
-export function saveProducts(products) {
+// Fetches the shared catalog from the server and updates the local cache.
+// Returns null if the server couldn't be reached (caller should keep
+// showing the cached value in that case).
+export async function refreshProducts() {
+  try {
+    const res = await fetch("/api/products");
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (Array.isArray(data) && data.length) {
+      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(data));
+      return data;
+    }
+    return null; // server has nothing saved yet
+  } catch (e) {
+    return null; // offline, or KV not connected yet
+  }
+}
+
+export async function saveProducts(products) {
   try {
     localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
   } catch (e) {}
+  try {
+    await fetch("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(products),
+    });
+  } catch (e) {
+    // Saved locally at least. It'll sync next time the API is reachable.
+  }
 }
 
-export function loadCarts() {
+export function loadCartsCached() {
   try {
     const raw = localStorage.getItem(CARTS_KEY);
     return raw ? JSON.parse(raw) : {};
@@ -55,10 +93,38 @@ export function loadCarts() {
   }
 }
 
-export function saveCarts(carts) {
+// Fetches the full, shared cart list from the server. Returns null if the
+// server couldn't be reached.
+export async function refreshCarts() {
   try {
-    localStorage.setItem(CARTS_KEY, JSON.stringify(carts));
+    const res = await fetch("/api/carts");
+    if (!res.ok) return null;
+    const data = await res.json();
+    localStorage.setItem(CARTS_KEY, JSON.stringify(data));
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Saves ONE cart. Deliberately doesn't overwrite the whole carts object on
+// the server — two different devices could be saving different carts at
+// the same moment, and this keeps them from clobbering each other.
+export async function saveCart(id, cart) {
+  try {
+    const current = loadCartsCached();
+    current[id] = cart;
+    localStorage.setItem(CARTS_KEY, JSON.stringify(current));
   } catch (e) {}
+  try {
+    await fetch("/api/carts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, cart }),
+    });
+  } catch (e) {
+    // Saved locally at least. It'll sync next time the API is reachable.
+  }
 }
 
 export function isAdminLoggedIn() {
