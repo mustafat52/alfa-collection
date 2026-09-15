@@ -1,8 +1,10 @@
-// Shared product catalog storage, backed by Vercel KV. Without this, a
-// price change or a new arrival added on one device never shows up on
-// another — same root cause as the carts issue. See api/carts.js for the
-// one-time Vercel KV setup step.
-import { kv } from "@vercel/kv";
+// Shared product catalog storage, backed by Upstash Redis (via the Vercel
+// Marketplace). Without this, a price change or a new arrival added on one
+// device never shows up on another — same root cause as the carts issue.
+// See api/carts.js for the one-time setup step.
+import { Redis } from "@upstash/redis";
+
+const kv = Redis.fromEnv();
 
 const KEY = "ac_products";
 
